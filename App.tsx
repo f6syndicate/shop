@@ -924,6 +924,7 @@ const TrackOrderPage = () => {
   const [cancelMessage, setCancelMessage] = useState('');
   const [cancelling, setCancelling] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  const { updateOrderStatus } = useGlobalStore();
 
   useEffect(() => {
     const id = searchParams.get('orderId');
@@ -972,13 +973,20 @@ const TrackOrderPage = () => {
     );
     if (!confirmed) return;
     setCancelling(true);
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: 'Cancelled' })
-      .eq('order_id', order.order_id);
-    if (!error) {
-      setOrder({ ...order, status: 'Cancelled' });
-      setCancelSuccess(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'Cancelled' })
+        .eq('order_id', order.order_id);
+      if (error) {
+        alert('Failed to cancel order. Please contact support.');
+      } else {
+        setOrder({ ...order, status: 'Cancelled' });
+        setCancelSuccess(true);
+        updateOrderStatus(order.order_id, 'Cancelled');
+      }
+    } catch (err) {
+      alert('Failed to cancel order. Please contact support.');
     }
     setCancelling(false);
   };

@@ -139,6 +139,10 @@ export const useStore = () => {
     return newOrder;
   };
 
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+  };
+
   return {
     cart,
     addToCart,
@@ -147,5 +151,6 @@ export const useStore = () => {
     clearCart,
     orders,
     createOrder,
+    updateOrderStatus,
   };
 };
