@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { CartItem, Order, Address } from './types';
+import { supabase } from './supabaseClient';
 
 // Simple "Database" using LocalStorage
 const STORAGE_KEYS = {
@@ -53,7 +54,7 @@ export const useStore = () => {
 
   const clearCart = () => setCart([]);
 
-  const createOrder = (address: Address) => {
+  const createOrder = async (address: Address): Promise<Order> => {
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const newOrder: Order = {
       id: `F6-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
@@ -65,6 +66,28 @@ export const useStore = () => {
     };
     setOrders(prev => [...prev, newOrder]);
     clearCart();
+
+    // Insert into Supabase
+    try {
+      await supabase.from('orders').insert({
+        order_id: newOrder.id,
+        date: newOrder.date,
+        full_name: address.fullName,
+        email: address.email,
+        phone: address.phone,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        zip: address.zip,
+        items: JSON.stringify(cart),
+        total,
+        status: 'Paid',
+        payment_method: 'UPI/Card'
+      });
+    } catch (error) {
+      console.error('Failed to save order to Supabase:', error);
+    }
+
     return newOrder;
   };
 

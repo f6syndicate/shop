@@ -331,13 +331,13 @@ const CheckoutPage = () => {
   const [upiId, setUpiId] = useState('');
   const [showDocs, setShowDocs] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (paymentMethod === 'UPI' && !upiId.includes('@')) {
       alert("Please enter a valid UPI ID (e.g. user@bank)");
       return;
     }
-    const order = createOrder(formData);
+    const order = await createOrder(formData);
     navigate(`/order-success/${order.id}`);
   };
 
