@@ -1,0 +1,627 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from './supabaseClient';
+import { LogOut, Package, RefreshCw, Download, Eye, X, ChevronDown, Shield, AlertCircle, Loader } from 'lucide-react';
+
+// ─── TYPES ────────────────────────────────────────────────
+interface OrderRow {
+  id: string;
+  order_id: string;
+  date: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  items: any[];
+  total: number;
+  status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled';
+  payment_method: string;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  Pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  Paid: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  Shipped: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  Delivered: 'bg-green-500/10 text-green-400 border-green-500/20',
+  Cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
+};
+
+const ALL_STATUSES = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
+
+// ─── LOGIN PAGE ───────────────────────────────────────────
+const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError('Invalid credentials. Access denied.');
+    } else {
+      onLogin();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#080808',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: "'Montserrat', sans-serif",
+      padding: '2rem'
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;700&family=Montserrat:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+      <div style={{
+        width: '100%',
+        maxWidth: '400px',
+        background: '#111',
+        border: '1px solid #222',
+        padding: '3rem',
+      }}>
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <div style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: '3.5rem',
+            fontWeight: 700,
+            color: '#c9a84c',
+            lineHeight: 1,
+            marginBottom: '0.3rem'
+          }}>F6</div>
+          <div style={{
+            fontSize: '0.55rem',
+            letterSpacing: '0.5em',
+            color: '#444',
+            textTransform: 'uppercase',
+          }}>Admin · Restricted Access</div>
+          <div style={{
+            width: '40px',
+            height: '1px',
+            background: '#c9a84c',
+            margin: '1.2rem auto 0',
+            opacity: 0.4
+          }} />
+        </div>
+
+        {/* Shield icon */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Shield size={32} color="#c9a84c" style={{ opacity: 0.6 }} />
+        </div>
+
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.55rem',
+              letterSpacing: '0.3em',
+              color: '#666',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem'
+            }}>Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="admin@f6syndicate.com"
+              style={{
+                width: '100%',
+                background: '#0a0a0a',
+                border: '1px solid #222',
+                color: '#f0ece4',
+                fontFamily: "'Montserrat', sans-serif",
+                fontSize: '0.8rem',
+                fontWeight: 300,
+                padding: '0.9rem 1rem',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.55rem',
+              letterSpacing: '0.3em',
+              color: '#666',
+              textTransform: 'uppercase',
+              marginBottom: '0.5rem'
+            }}>Password</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+              style={{
+                width: '100%',
+                background: '#0a0a0a',
+                border: '1px solid #222',
+                color: '#f0ece4',
+                fontFamily: "'Montserrat', sans-serif",
+                fontSize: '0.8rem',
+                fontWeight: 300,
+                padding: '0.9rem 1rem',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {error && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'rgba(231,76,60,0.08)',
+              border: '1px solid rgba(231,76,60,0.2)',
+              padding: '0.8rem 1rem',
+              marginBottom: '1.2rem',
+              fontSize: '0.72rem',
+              color: '#e74c3c'
+            }}>
+              <AlertCircle size={14} />
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              background: loading ? '#333' : '#c9a84c',
+              color: '#080808',
+              border: 'none',
+              padding: '1rem',
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              letterSpacing: '0.4em',
+              textTransform: 'uppercase',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            {loading ? <><Loader size={14} className="animate-spin" /> Verifying...</> : 'Enter Command Centre'}
+          </button>
+        </form>
+
+        <div style={{
+          marginTop: '2rem',
+          fontSize: '0.6rem',
+          color: '#333',
+          textAlign: 'center',
+          letterSpacing: '0.1em'
+        }}>
+          Unauthorised access is strictly prohibited
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── ORDER DETAIL MODAL ───────────────────────────────────
+const OrderModal: React.FC<{ order: OrderRow; onClose: () => void }> = ({ order, onClose }) => {
+  const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.92)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem',
+      fontFamily: "'Montserrat', sans-serif"
+    }}>
+      <div style={{
+        background: '#111',
+        border: '1px solid #222',
+        width: '100%',
+        maxWidth: '600px',
+        maxHeight: '85vh',
+        overflowY: 'auto',
+        padding: '2.5rem'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid #1a1a1a' }}>
+          <div>
+            <div style={{ fontSize: '0.55rem', letterSpacing: '0.4em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '0.3rem' }}>Order Details</div>
+            <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', color: '#f0ece4', fontWeight: 300 }}>{order.order_id}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: '1px solid #222', color: '#666', cursor: 'pointer', padding: '0.4rem' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Customer */}
+        <Section title="Customer">
+          <Row label="Name" value={order.full_name} />
+          <Row label="Email" value={order.email} />
+          <Row label="Phone" value={order.phone} />
+        </Section>
+
+        {/* Delivery */}
+        <Section title="Delivery Address">
+          <Row label="Street" value={order.street} />
+          <Row label="City" value={`${order.city}, ${order.state} - ${order.zip}`} />
+        </Section>
+
+        {/* Items */}
+        <Section title="Items Ordered">
+          {items && items.map((item: any, i: number) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0', borderBottom: '1px solid #1a1a1a', fontSize: '0.75rem' }}>
+              <div>
+                <div style={{ color: '#f0ece4', marginBottom: '0.2rem' }}>{item.name}</div>
+                <div style={{ color: '#555', fontSize: '0.65rem' }}>Size: {item.selectedSize} · Qty: {item.quantity}</div>
+              </div>
+              <div style={{ color: '#c9a84c', fontFamily: "'Cormorant Garamond', serif", fontSize: '1rem' }}>₹{item.price * item.quantity}</div>
+            </div>
+          ))}
+        </Section>
+
+        {/* Payment */}
+        <Section title="Payment">
+          <Row label="Method" value={order.payment_method} />
+          <Row label="Total" value={`₹${order.total}`} gold />
+          <Row label="Status" value={order.status} />
+        </Section>
+
+        <div style={{ marginTop: '1.5rem', fontSize: '0.65rem', color: '#333', letterSpacing: '0.1em' }}>
+          Placed on {new Date(order.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div style={{ marginBottom: '1.5rem' }}>
+    <div style={{ fontSize: '0.55rem', letterSpacing: '0.35em', color: '#c9a84c', textTransform: 'uppercase', marginBottom: '0.8rem', opacity: 0.7 }}>{title}</div>
+    {children}
+  </div>
+);
+
+const Row: React.FC<{ label: string; value: string; gold?: boolean }> = ({ label, value, gold }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #1a1a1a', fontSize: '0.75rem' }}>
+    <span style={{ color: '#555' }}>{label}</span>
+    <span style={{ color: gold ? '#c9a84c' : '#f0ece4', fontWeight: gold ? 600 : 300 }}>{value}</span>
+  </div>
+);
+
+// ─── MAIN DASHBOARD ───────────────────────────────────────
+const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [search, setSearch] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('date', { ascending: false });
+    if (!error && data) setOrders(data as OrderRow[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingId(orderId);
+    await supabase.from('orders').update({ status: newStatus }).eq('order_id', orderId);
+    setOrders(prev => prev.map(o => o.order_id === orderId ? { ...o, status: newStatus as any } : o));
+    setUpdatingId(null);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    onLogout();
+  };
+
+  const downloadCSV = () => {
+    const headers = ['Order ID', 'Date', 'Customer', 'Email', 'Phone', 'City', 'Total', 'Status', 'Payment'];
+    const rows = filteredOrders.map(o => [
+      o.order_id,
+      new Date(o.date).toLocaleDateString('en-IN'),
+      o.full_name,
+      o.email,
+      o.phone,
+      `${o.city} ${o.zip}`,
+      `₹${o.total}`,
+      o.status,
+      o.payment_method
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `f6-orders-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
+  const filteredOrders = orders.filter(o => {
+    const matchStatus = statusFilter === 'All' || o.status === statusFilter;
+    const matchSearch = !search ||
+      o.order_id.toLowerCase().includes(search.toLowerCase()) ||
+      o.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      o.email.toLowerCase().includes(search.toLowerCase());
+    return matchStatus && matchSearch;
+  });
+
+  // Stats
+  const totalRevenue = orders.reduce((acc, o) => acc + Number(o.total), 0);
+  const pending = orders.filter(o => o.status === 'Pending').length;
+  const shipped = orders.filter(o => o.status === 'Shipped').length;
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#080808',
+      fontFamily: "'Montserrat', sans-serif",
+      color: '#f0ece4'
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;700&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
+
+      {/* TOP BAR */}
+      <div style={{
+        borderBottom: '1px solid #1a1a1a',
+        padding: '1.2rem 2.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: '#0a0a0a'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 700, color: '#c9a84c', lineHeight: 1 }}>F6</div>
+          <div style={{ width: '1px', height: '24px', background: '#1a1a1a' }} />
+          <div style={{ fontSize: '0.6rem', letterSpacing: '0.35em', color: '#444', textTransform: 'uppercase' }}>Command Centre</div>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button onClick={fetchOrders} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center' }}>
+            <RefreshCw size={14} />
+          </button>
+          <button onClick={downloadCSV} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            <Download size={13} /> Export CSV
+          </button>
+          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            <LogOut size={13} /> Logout
+          </button>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '2.5rem' }}>
+
+        {/* STATS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#1a1a1a', border: '1px solid #1a1a1a', marginBottom: '2.5rem' }}>
+          {[
+            { label: 'Total Orders', value: orders.length, suffix: '' },
+            { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, suffix: '' },
+            { label: 'Pending', value: pending, suffix: '' },
+            { label: 'Shipped', value: shipped, suffix: '' },
+          ].map((stat, i) => (
+            <div key={i} style={{ background: '#0f0f0f', padding: '1.8rem 2rem' }}>
+              <div style={{ fontSize: '0.55rem', letterSpacing: '0.35em', color: '#444', textTransform: 'uppercase', marginBottom: '0.6rem' }}>{stat.label}</div>
+              <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.2rem', color: '#c9a84c', fontWeight: 300, lineHeight: 1 }}>{stat.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* FILTERS */}
+        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search by order ID, name, email..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1,
+              minWidth: '220px',
+              background: '#0f0f0f',
+              border: '1px solid #1a1a1a',
+              color: '#f0ece4',
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.75rem',
+              fontWeight: 300,
+              padding: '0.75rem 1rem',
+              outline: 'none'
+            }}
+          />
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {['All', ...ALL_STATUSES].map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                style={{
+                  background: statusFilter === s ? '#c9a84c' : '#0f0f0f',
+                  color: statusFilter === s ? '#080808' : '#555',
+                  border: `1px solid ${statusFilter === s ? '#c9a84c' : '#1a1a1a'}`,
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.6rem',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  fontFamily: "'Montserrat', sans-serif",
+                  fontWeight: statusFilter === s ? 600 : 300
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* TABLE */}
+        <div style={{ border: '1px solid #1a1a1a', overflow: 'hidden' }}>
+          {/* Table Header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.7fr',
+            background: '#0a0a0a',
+            borderBottom: '1px solid #1a1a1a',
+            padding: '0.9rem 1.5rem',
+            gap: '1rem'
+          }}>
+            {['Order ID', 'Date', 'Customer', 'Total', 'Payment', 'Status', 'Actions'].map(h => (
+              <div key={h} style={{ fontSize: '0.55rem', letterSpacing: '0.3em', color: '#c9a84c', textTransform: 'uppercase', fontWeight: 600 }}>{h}</div>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {loading ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#333', fontSize: '0.75rem' }}>
+              <Loader size={20} style={{ margin: '0 auto 1rem', display: 'block', opacity: 0.3 }} />
+              Loading orders...
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div style={{ padding: '4rem', textAlign: 'center', color: '#333' }}>
+              <Package size={32} style={{ margin: '0 auto 1rem', display: 'block', opacity: 0.2 }} />
+              <div style={{ fontSize: '0.75rem' }}>No orders found</div>
+            </div>
+          ) : (
+            filteredOrders.map((order, idx) => (
+              <div
+                key={order.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.7fr',
+                  padding: '1.2rem 1.5rem',
+                  gap: '1rem',
+                  borderBottom: '1px solid #111',
+                  background: idx % 2 === 0 ? '#0a0a0a' : '#0d0d0d',
+                  alignItems: 'center',
+                  transition: 'background 0.2s'
+                }}
+              >
+                {/* Order ID */}
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#c9a84c' }}>{order.order_id}</div>
+
+                {/* Date */}
+                <div style={{ fontSize: '0.7rem', color: '#555' }}>
+                  {new Date(order.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </div>
+
+                {/* Customer */}
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#f0ece4', marginBottom: '0.2rem' }}>{order.full_name}</div>
+                  <div style={{ fontSize: '0.62rem', color: '#444' }}>{order.email}</div>
+                </div>
+
+                {/* Total */}
+                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', color: '#f0ece4' }}>₹{order.total}</div>
+
+                {/* Payment */}
+                <div style={{ fontSize: '0.65rem', color: '#555' }}>{order.payment_method}</div>
+
+                {/* Status Dropdown */}
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={order.status}
+                    onChange={e => updateStatus(order.order_id, e.target.value)}
+                    disabled={updatingId === order.order_id}
+                    style={{
+                      background: '#111',
+                      border: '1px solid #1a1a1a',
+                      color: '#f0ece4',
+                      fontFamily: "'Montserrat', sans-serif",
+                      fontSize: '0.6rem',
+                      letterSpacing: '0.15em',
+                      padding: '0.4rem 0.7rem',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      width: '100%',
+                      appearance: 'none',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {ALL_STATUSES.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* View button */}
+                <button
+                  onClick={() => setSelectedOrder(order)}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #1a1a1a',
+                    color: '#555',
+                    cursor: 'pointer',
+                    padding: '0.4rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Eye size={14} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ marginTop: '1.5rem', fontSize: '0.6rem', color: '#222', letterSpacing: '0.2em', textAlign: 'center' }}>
+          F6 SYNDICATE · COMMAND CENTRE · {filteredOrders.length} ORDERS SHOWN
+        </div>
+      </div>
+
+      {/* Order Modal */}
+      {selectedOrder && (
+        <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      )}
+    </div>
+  );
+};
+
+// ─── ROOT ADMIN COMPONENT ─────────────────────────────────
+const AdminDashboard: React.FC = () => {
+  const [session, setSession] = useState<any>(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setChecking(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (checking) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#080808', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader size={24} color="#c9a84c" style={{ opacity: 0.4 }} />
+      </div>
+    );
+  }
+
+  if (!session) return <LoginPage onLogin={() => {}} />;
+  return <Dashboard onLogout={() => setSession(null)} />;
+};
+
+export default AdminDashboard;

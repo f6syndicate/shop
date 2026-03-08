@@ -6,6 +6,7 @@ import { PRODUCTS, CATEGORIES } from './constants';
 import { useStore } from './store';
 import { CartItem, Product, Address, Order } from './types';
 import { jsPDF } from 'jspdf';
+import AdminDashboard from './AdminDashboard';
 
 // --- Context ---
 const StoreContext = createContext<ReturnType<typeof useStore> | null>(null);
@@ -662,6 +663,7 @@ const App = () => {
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </main>
           <Footer />
