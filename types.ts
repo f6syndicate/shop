@@ -33,6 +33,7 @@ export interface Order {
   total: number;
   address: Address;
   status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered';
+  payment_method?: string;
 }
 
 export enum AppRoute {

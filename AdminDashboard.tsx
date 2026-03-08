@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { LogOut, Package, RefreshCw, Download, Eye, X, ChevronDown, Shield, AlertCircle, Loader } from 'lucide-react';
+import { LogOut, Package, RefreshCw, Download, Eye, X, ChevronDown, Shield, AlertCircle, Loader, Edit } from 'lucide-react';
+
+// Run this SQL in Supabase to add notes column:
+// ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT;
 
 // ─── TYPES ────────────────────────────────────────────────
 interface OrderRow {
@@ -18,6 +21,7 @@ interface OrderRow {
   total: number;
   status: 'Pending' | 'Paid' | 'Shipped' | 'Delivered' | 'Cancelled';
   payment_method: string;
+  notes?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -314,6 +318,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const [search, setSearch] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingOrder, setEditingOrder] = useState<OrderRow | null>(null);
+  const [editFields, setEditFields] = useState<{ status: string; payment_method: string; notes: string }>({ status: '', payment_method: '', notes: '' });
+  const [saveMessage, setSaveMessage] = useState('');
+
+
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -373,6 +383,8 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const totalRevenue = orders.reduce((acc, o) => acc + Number(o.total), 0);
   const pending = orders.filter(o => o.status === 'Pending').length;
   const shipped = orders.filter(o => o.status === 'Shipped').length;
+  const delivered = orders.filter(o => o.status === 'Delivered').length;
+  const confirmedRevenue = orders.reduce((acc, o) => o.status === 'Delivered' ? acc + Number(o.total) : acc, 0);
 
   return (
     <div style={{
@@ -413,12 +425,14 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '2.5rem' }}>
 
         {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: '#1a1a1a', border: '1px solid #1a1a1a', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1px', background: '#1a1a1a', border: '1px solid #1a1a1a', marginBottom: '2.5rem' }}>
           {[
             { label: 'Total Orders', value: orders.length, suffix: '' },
             { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, suffix: '' },
             { label: 'Pending', value: pending, suffix: '' },
             { label: 'Shipped', value: shipped, suffix: '' },
+            { label: 'Delivered', value: delivered, suffix: '' },
+            { label: 'Confirmed Revenue', value: `₹${confirmedRevenue.toLocaleString('en-IN')}`, suffix: '' },
           ].map((stat, i) => (
             <div key={i} style={{ background: '#0f0f0f', padding: '1.8rem 2rem' }}>
               <div style={{ fontSize: '0.55rem', letterSpacing: '0.35em', color: '#444', textTransform: 'uppercase', marginBottom: '0.6rem' }}>{stat.label}</div>
@@ -476,13 +490,13 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           {/* Table Header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.7fr',
+            gridTemplateColumns: '1.5fr 1fr 1.5fr 0.8fr 0.8fr 1fr 1.5fr 0.5fr 0.5fr',
             background: '#0a0a0a',
             borderBottom: '1px solid #1a1a1a',
             padding: '0.9rem 1.5rem',
             gap: '1rem'
           }}>
-            {['Order ID', 'Date', 'Customer', 'Total', 'Payment', 'Status', 'Actions'].map(h => (
+            {['Order ID', 'Date', 'Customer', 'Phone', 'City', 'Total', 'Payment', 'Status', 'Actions'].map(h => (
               <div key={h} style={{ fontSize: '0.55rem', letterSpacing: '0.3em', color: '#c9a84c', textTransform: 'uppercase', fontWeight: 600 }}>{h}</div>
             ))}
           </div>
@@ -500,17 +514,19 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             </div>
           ) : (
             filteredOrders.map((order, idx) => (
+              <React.Fragment key={order.id}>
               <div
-                key={order.id}
+                onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '1.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.7fr',
+                  gridTemplateColumns: '1.5fr 1fr 1.5fr 0.8fr 0.8fr 1fr 1.5fr 0.5fr 0.5fr',
                   padding: '1.2rem 1.5rem',
                   gap: '1rem',
                   borderBottom: '1px solid #111',
                   background: idx % 2 === 0 ? '#0a0a0a' : '#0d0d0d',
                   alignItems: 'center',
-                  transition: 'background 0.2s'
+                  transition: 'background 0.2s',
+                  cursor: 'pointer'
                 }}
               >
                 {/* Order ID */}
@@ -526,6 +542,12 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   <div style={{ fontSize: '0.75rem', color: '#f0ece4', marginBottom: '0.2rem' }}>{order.full_name}</div>
                   <div style={{ fontSize: '0.62rem', color: '#444' }}>{order.email}</div>
                 </div>
+
+                {/* Phone */}
+                <div style={{ fontSize: '0.65rem', color: '#555' }}>{order.phone}</div>
+
+                {/* City */}
+                <div style={{ fontSize: '0.65rem', color: '#555' }}>{order.city}</div>
 
                 {/* Total */}
                 <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.1rem', color: '#f0ece4' }}>₹{order.total}</div>
@@ -561,23 +583,58 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </div>
 
                 {/* View button */}
-                <button
-                  onClick={() => setSelectedOrder(order)}
-                  style={{
-                    background: 'none',
-                    border: '1px solid #1a1a1a',
-                    color: '#555',
-                    cursor: 'pointer',
-                    padding: '0.4rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <Eye size={14} />
-                </button>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setEditingOrder(order); setEditFields({ status: order.status, payment_method: order.payment_method, notes: order.notes || '' }); }}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #1a1a1a',
+                      color: '#555',
+                      cursor: 'pointer',
+                      padding: '0.4rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Edit size={14} />
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); setSelectedOrder(order); }}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #1a1a1a',
+                      color: '#555',
+                      cursor: 'pointer',
+                      padding: '0.4rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Eye size={14} />
+                  </button>
+                </div>
               </div>
+              {expandedId === order.id && (
+                <div style={{ background: '#111', color: '#f0ece4', padding: '1rem 2rem', borderBottom: '1px solid #111', fontSize: '0.75rem' }}>
+                  <div className="mb-2"><span className="font-bold text-gray-400">Phone:</span> {order.phone}</div>
+                  <div className="mb-2"><span className="font-bold text-gray-400">Address:</span> {order.street}, {order.city}, {order.state} {order.zip}</div>
+                  <div className="mb-2"><span className="font-bold text-gray-400">Payment:</span> {order.payment_method}</div>
+                  <div className="mt-2">
+                    <div className="font-bold text-gray-400 mb-1">Items:</div>
+                    {order.items && order.items.map((item: any, i: number) => (
+                      <div key={i} className="flex justify-between text-sm mb-1">
+                        <div>{item.name} ({item.selectedSize}) ×{item.quantity}</div>
+                        <div>₹{item.price} / ₹{item.price * item.quantity}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              </React.Fragment>
             ))
           )}
         </div>
@@ -591,6 +648,71 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       {/* Order Modal */}
       {selectedOrder && (
         <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+      )}
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem'
+        }}>
+          <div style={{ background: '#111', border: '1px solid #222', width: '90%', maxWidth: '500px', padding: '2rem' }}>
+            <h2 style={{ color: '#c9a84c', fontSize: '1.5rem', marginBottom: '1rem' }}>Edit Order {editingOrder.order_id}</h2>
+            <div style={{ color: '#f0ece4', marginBottom: '1rem' }}>{saveMessage && <span style={{ color: '#4ade80' }}>{saveMessage}</span>}</div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', color: '#aaa', marginBottom: '0.3rem' }}>Status</label>
+              <select
+                value={editFields.status}
+                onChange={e => setEditFields(f => ({ ...f, status: e.target.value }))}
+                style={{ width: '100%', padding: '0.5rem', background: '#111', color: '#f0ece4', border: '1px solid #333' }}
+              >
+                {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', color: '#aaa', marginBottom: '0.3rem' }}>Payment Method</label>
+              <input
+                type="text"
+                value={editFields.payment_method}
+                onChange={e => setEditFields(f => ({ ...f, payment_method: e.target.value }))}
+                style={{ width: '100%', padding: '0.5rem', background: '#111', color: '#f0ece4', border: '1px solid #333' }}
+              />
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', color: '#aaa', marginBottom: '0.3rem' }}>Notes</label>
+              <textarea
+                value={editFields.notes}
+                onChange={e => setEditFields(f => ({ ...f, notes: e.target.value }))}
+                style={{ width: '100%', padding: '0.5rem', background: '#111', color: '#f0ece4', border: '1px solid #333' }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button
+                onClick={() => {
+                  // Save
+                  (async () => {
+                    const { error } = await supabase
+                      .from('orders')
+                      .update({ status: editFields.status, payment_method: editFields.payment_method, notes: editFields.notes })
+                      .eq('order_id', editingOrder.order_id);
+                    if (!error) {
+                      setOrders(prev => prev.map(o => o.order_id === editingOrder.order_id ? { ...o, ...editFields } as any : o));
+                      setSaveMessage('Saved successfully');
+                      setTimeout(() => setSaveMessage(''), 2000);
+                    } else {
+                      alert('Save failed');
+                    }
+                  })();
+                }}
+                style={{ padding: '0.6rem 1.2rem', background: '#c9a84c', color: '#080808', border: 'none', cursor: 'pointer' }}
+              >Save</button>
+              <button
+                onClick={() => setEditingOrder(null)}
+                style={{ padding: '0.6rem 1.2rem', background: '#333', color: '#f0ece4', border: 'none', cursor: 'pointer' }}
+              >Cancel</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

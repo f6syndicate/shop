@@ -54,7 +54,7 @@ export const useStore = () => {
 
   const clearCart = () => setCart([]);
 
-  const createOrder = async (address: Address): Promise<Order> => {
+  const createOrder = async (address: Address, paymentMethod: string = 'UPI/Card'): Promise<Order> => {
     const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const newOrder: Order = {
       id: `F6-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
@@ -62,7 +62,8 @@ export const useStore = () => {
       items: [...cart],
       total,
       address,
-      status: 'Paid'
+      status: 'Paid',
+      payment_method: paymentMethod
     };
     setOrders(prev => [...prev, newOrder]);
     clearCart();
@@ -82,7 +83,7 @@ export const useStore = () => {
         items: JSON.stringify(cart),
         total,
         status: 'Paid',
-        payment_method: 'UPI/Card'
+        payment_method: paymentMethod
       });
     } catch (error) {
       console.error('Failed to save order to Supabase:', error);

@@ -1,7 +1,7 @@
 
 import React, { useState, createContext, useContext } from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
-import { ShoppingCart, User, Menu, X, ArrowRight, CheckCircle, Package, Download, Star, CreditCard, Smartphone, Info } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, ArrowRight, CheckCircle, Package, Download, Star, CreditCard, Smartphone, Info, Truck } from 'lucide-react';
 import { PRODUCTS, CATEGORIES } from './constants';
 import { useStore } from './store';
 import { CartItem, Product, Address, Order } from './types';
@@ -328,7 +328,8 @@ const CheckoutPage = () => {
   const [formData, setFormData] = useState<Address>({
     fullName: '', email: '', phone: '', street: '', city: '', state: '', zip: ''
   });
-  const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'UPI'>('UPI');
+  type PaymentMethod = 'CARD' | 'UPI' | 'COD';
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
   const [upiId, setUpiId] = useState('');
   const [showDocs, setShowDocs] = useState(false);
 
@@ -338,7 +339,7 @@ const CheckoutPage = () => {
       alert("Please enter a valid UPI ID (e.g. user@bank)");
       return;
     }
-    const order = await createOrder(formData);
+    const order = await createOrder(formData, paymentMethod);
     navigate(`/order-success/${order.id}`);
   };
 
@@ -470,6 +471,24 @@ const CheckoutPage = () => {
                    {paymentMethod === 'CARD' && <div className="w-3 h-3 bg-black rounded-full"></div>}
                 </div>
               </div>
+
+              <div 
+                onClick={() => setPaymentMethod('COD')}
+                className={`p-6 border-2 rounded-xl flex justify-between items-center cursor-pointer transition ${paymentMethod === 'COD' ? 'border-black bg-gray-50 shadow-md' : 'border-gray-100 bg-white'}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-lg ${paymentMethod === 'COD' ? 'bg-black text-white' : 'bg-gray-100 text-gray-400'}`}>
+                    <Truck className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg">Cash on Delivery</p>
+                    <p className="text-sm text-gray-500">Pay when your order arrives at your door</p>
+                  </div>
+                </div>
+                <div className="w-6 h-6 border-2 border-black rounded-full flex items-center justify-center">
+                   {paymentMethod === 'COD' && <div className="w-3 h-3 bg-black rounded-full"></div>}
+                </div>
+              </div>
             </div>
           </section>
         </div>
@@ -502,7 +521,11 @@ const CheckoutPage = () => {
             </div>
           </div>
           <button type="submit" className="w-full bg-red-600 text-white py-5 font-bold text-lg hover:bg-red-700 transition shadow-lg shadow-red-900/20">
-            {paymentMethod === 'UPI' ? 'PAY SECURELY VIA UPI' : 'PAY VIA CARD'}
+            {paymentMethod === 'UPI'
+              ? 'PAY SECURELY VIA UPI'
+              : paymentMethod === 'CARD'
+              ? 'PAY VIA CARD'
+              : 'CONFIRM ORDER · PAY ON DELIVERY'}
           </button>
         </div>
       </form>
@@ -585,6 +608,24 @@ const OrderSuccessPage = () => {
           <p>Address: <span className="text-black font-medium">{order.address.street}, {order.address.city}, {order.address.state} {order.address.zip}</span></p>
           <p>Contact: <span className="text-black font-medium">{order.address.phone}</span></p>
           <p>Status: <span className="bg-green-600 text-white px-2 py-0.5 rounded-full text-[10px] uppercase font-bold">{order.status}</span></p>
+        </div>
+      </div>
+
+      <div className="bg-gray-50 p-8 rounded text-left mb-12 border border-gray-200">
+        <h3 className="font-bold mb-4 border-b border-gray-200 pb-2 uppercase text-xs tracking-widest text-gray-500">Payment & Items</h3>
+        <div className="space-y-2 text-sm text-gray-600">
+          <p>Payment Method: <span className="text-black font-medium">{order.payment_method || 'N/A'}</span></p>
+        </div>
+        <div className="mt-4">
+          <h4 className="font-semibold text-gray-700 mb-2">Items Ordered</h4>
+          <ul className="text-sm text-gray-600 space-y-1">
+            {order.items.map((item, idx) => (
+              <li key={idx}>{item.name} ({item.selectedSize}) × {item.quantity}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="mt-4 text-sm text-gray-600">
+          Subtotal: <span className="text-black font-medium">₹{order.total}</span>
         </div>
       </div>
 
