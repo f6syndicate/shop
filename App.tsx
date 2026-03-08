@@ -800,24 +800,28 @@ const App = () => {
   return (
     <StoreContext.Provider value={store}>
       <HashRouter>
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/product/:id" element={<ProductDetailPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/themes" element={<ThemesPage />} />
-              <Route path="/theme/:themeName" element={<ThemePage />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <Routes>
+          <Route path="/admin/*" element={<AdminDashboard />} />
+          <Route path="/*" element={
+            <div className="min-h-screen flex flex-col">
+              <Navbar />
+              <main className="flex-grow">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/product/:id" element={<ProductDetailPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+                  <Route path="/orders" element={<OrdersPage />} />
+                  <Route path="/themes" element={<ThemesPage />} />
+                  <Route path="/theme/:themeName" element={<ThemePage />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          } />
+        </Routes>
       </HashRouter>
     </StoreContext.Provider>
   );

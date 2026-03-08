@@ -2,6 +2,17 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { LogOut, Package, RefreshCw, Download, Eye, X, ChevronDown, Shield, AlertCircle, Loader, Edit } from 'lucide-react';
 
+// custom hook to detect mobile viewport
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+};
+
 // Run this SQL in Supabase to add notes column:
 // ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT;
 
@@ -36,6 +47,7 @@ const ALL_STATUSES = ['Pending', 'Paid', 'Shipped', 'Delivered', 'Cancelled'];
 
 // ─── LOGIN PAGE ───────────────────────────────────────────
 const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+  const isMobile = useIsMobile();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -62,7 +74,7 @@ const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
       alignItems: 'center',
       justifyContent: 'center',
       fontFamily: "'Montserrat', sans-serif",
-      padding: '2rem'
+      padding: isMobile ? '1.5rem' : '2rem'
     }}>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;700&family=Montserrat:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
       <div style={{
@@ -70,7 +82,7 @@ const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
         maxWidth: '400px',
         background: '#111',
         border: '1px solid #222',
-        padding: '3rem',
+        padding: isMobile ? '1.5rem' : '3rem',
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
@@ -124,7 +136,7 @@ const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 border: '1px solid #222',
                 color: '#f0ece4',
                 fontFamily: "'Montserrat', sans-serif",
-                fontSize: '0.8rem',
+                fontSize: isMobile ? '16px' : '0.8rem',
                 fontWeight: 300,
                 padding: '0.9rem 1rem',
                 outline: 'none',
@@ -154,7 +166,7 @@ const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 border: '1px solid #222',
                 color: '#f0ece4',
                 fontFamily: "'Montserrat', sans-serif",
-                fontSize: '0.8rem',
+                fontSize: isMobile ? '16px' : '0.8rem',
                 fontWeight: 300,
                 padding: '0.9rem 1rem',
                 outline: 'none',
@@ -311,6 +323,7 @@ const Row: React.FC<{ label: string; value: string; gold?: boolean }> = ({ label
 
 // ─── MAIN DASHBOARD ───────────────────────────────────────
 const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
+  const isMobile = useIsMobile();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
@@ -391,49 +404,59 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       minHeight: '100vh',
       background: '#080808',
       fontFamily: "'Montserrat', sans-serif",
-      color: '#f0ece4'
+      color: '#f0ece4',
+      overflowX: 'hidden',
+      width: '100%',
+      boxSizing: 'border-box'
     }}>
       <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;700&family=Montserrat:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
 
       {/* TOP BAR */}
       <div style={{
         borderBottom: '1px solid #1a1a1a',
-        padding: '1.2rem 2.5rem',
+        padding: isMobile ? '0.8rem 1rem' : '1.2rem 2.5rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: '#0a0a0a'
+        background: '#0a0a0a',
+        flexWrap: 'wrap',
+        gap: '0.5rem',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.8rem', fontWeight: 700, color: '#c9a84c', lineHeight: 1 }}>F6</div>
-          <div style={{ width: '1px', height: '24px', background: '#1a1a1a' }} />
-          <div style={{ fontSize: '0.6rem', letterSpacing: '0.35em', color: '#444', textTransform: 'uppercase' }}>Command Centre</div>
+          <div style={{ width: '1px', height: '24px', background: '#1a1a1a', display: isMobile ? 'none' : 'block' }} />
+          <div style={{ fontSize: '0.6rem', letterSpacing: '0.35em', color: '#444', textTransform: 'uppercase', display: isMobile ? 'none' : 'block' }}>Command Centre</div>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button onClick={fetchOrders} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center' }}>
+          <button onClick={fetchOrders} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', minHeight: '44px' }}>
             <RefreshCw size={14} />
+            {!isMobile && <span className="ml-1" style={{fontSize:'0.6rem',letterSpacing:'0.2em',textTransform:'uppercase'}}>Refresh</span>}
           </button>
-          <button onClick={downloadCSV} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-            <Download size={13} /> Export CSV
+          <button onClick={downloadCSV} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: isMobile ? '0.5rem' : '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', minHeight: '44px' }}>
+            <Download size={13} />
+            {!isMobile && ' Export CSV'}
           </button>
-          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-            <LogOut size={13} /> Logout
+          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#666', cursor: 'pointer', padding: isMobile ? '0.5rem' : '0.5rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', minHeight: '44px' }}>
+            <LogOut size={13} />
+            {!isMobile && ' Logout'}
           </button>
         </div>
       </div>
 
-      <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '2.5rem' }}>
+      <div style={{ maxWidth: '1300px', margin: '0 auto', padding: isMobile ? '1rem' : '2.5rem', overflowX: 'hidden', width: '100%', boxSizing: 'border-box' }}>
 
         {/* STATS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1px', background: '#1a1a1a', border: '1px solid #1a1a1a', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '1px', background: '#1a1a1a', border: '1px solid #1a1a1a', marginBottom: '2.5rem' }}>
           {[
-            { label: 'Total Orders', value: orders.length, suffix: '' },
-            { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, suffix: '' },
-            { label: 'Pending', value: pending, suffix: '' },
-            { label: 'Shipped', value: shipped, suffix: '' },
-            { label: 'Delivered', value: delivered, suffix: '' },
-            { label: 'Confirmed Revenue', value: `₹${confirmedRevenue.toLocaleString('en-IN')}`, suffix: '' },
-          ].map((stat, i) => (
+            { label: 'Total Orders', value: orders.length, suffix: '', show: true },
+            { label: 'Total Revenue', value: `₹${totalRevenue.toLocaleString('en-IN')}`, suffix: '', show: true },
+            { label: 'Pending', value: pending, suffix: '', show: true },
+            { label: 'Shipped', value: shipped, suffix: '', show: !isMobile },
+            { label: 'Delivered', value: delivered, suffix: '', show: !isMobile },
+            { label: 'Confirmed Revenue', value: `₹${confirmedRevenue.toLocaleString('en-IN')}`, suffix: '', show: true },
+          ].filter(s => s.show).map((stat, i) => (
             <div key={i} style={{ background: '#0f0f0f', padding: '1.8rem 2rem' }}>
               <div style={{ fontSize: '0.55rem', letterSpacing: '0.35em', color: '#444', textTransform: 'uppercase', marginBottom: '0.6rem' }}>{stat.label}</div>
               <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2.2rem', color: '#c9a84c', fontWeight: 300, lineHeight: 1 }}>{stat.value}</div>
@@ -442,26 +465,26 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         </div>
 
         {/* FILTERS */}
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <input
             type="text"
             placeholder="Search by order ID, name, email..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
-              flex: 1,
-              minWidth: '220px',
+              width: '100%',
               background: '#0f0f0f',
               border: '1px solid #1a1a1a',
               color: '#f0ece4',
               fontFamily: "'Montserrat', sans-serif",
-              fontSize: '0.75rem',
+              fontSize: isMobile ? '1rem' : '0.75rem',
               fontWeight: 300,
               padding: '0.75rem 1rem',
-              outline: 'none'
+              outline: 'none',
+              boxSizing: 'border-box'
             }}
           />
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
             {['All', ...ALL_STATUSES].map(s => (
               <button
                 key={s}
@@ -470,13 +493,15 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                   background: statusFilter === s ? '#c9a84c' : '#0f0f0f',
                   color: statusFilter === s ? '#080808' : '#555',
                   border: `1px solid ${statusFilter === s ? '#c9a84c' : '#1a1a1a'}`,
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.6rem',
+                  padding: isMobile ? '0.6rem 0.8rem' : '0.5rem 1rem',
+                  fontSize: isMobile ? '0.55rem' : '0.6rem',
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
                   cursor: 'pointer',
                   fontFamily: "'Montserrat', sans-serif",
-                  fontWeight: statusFilter === s ? 600 : 300
+                  fontWeight: statusFilter === s ? 600 : 300,
+                  flex: isMobile ? '1 1 auto' : 'auto',
+                  minWidth: '60px'
                 }}
               >
                 {s}
@@ -485,21 +510,23 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* TABLE */}
-        <div style={{ border: '1px solid #1a1a1a', overflow: 'hidden' }}>
-          {/* Table Header */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1.5fr 1fr 1.5fr 0.8fr 0.8fr 1fr 1.5fr 0.5fr 0.5fr',
-            background: '#0a0a0a',
-            borderBottom: '1px solid #1a1a1a',
-            padding: '0.9rem 1.5rem',
-            gap: '1rem'
-          }}>
-            {['Order ID', 'Date', 'Customer', 'Phone', 'City', 'Total', 'Payment', 'Status', 'Actions'].map(h => (
-              <div key={h} style={{ fontSize: '0.55rem', letterSpacing: '0.3em', color: '#c9a84c', textTransform: 'uppercase', fontWeight: 600 }}>{h}</div>
-            ))}
-          </div>
+        {/* TABLE / CARDS */}
+        <div style={{ border: isMobile ? 'none' : '1px solid #1a1a1a', overflow: 'hidden' }}>
+          {/* Table Header - Hide on mobile */}
+          {!isMobile && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1.5fr 1fr 1.5fr 0.8fr 0.8fr 1fr 1.5fr 0.5fr 0.5fr',
+              background: '#0a0a0a',
+              borderBottom: '1px solid #1a1a1a',
+              padding: '0.9rem 1.5rem',
+              gap: '1rem'
+            }}>
+              {['Order ID', 'Date', 'Customer', 'Phone', 'City', 'Total', 'Payment', 'Status', 'Actions'].map(h => (
+                <div key={h} style={{ fontSize: '0.55rem', letterSpacing: '0.3em', color: '#c9a84c', textTransform: 'uppercase', fontWeight: 600 }}>{h}</div>
+              ))}
+            </div>
+          )}
 
           {/* Rows */}
           {loading ? (
@@ -512,7 +539,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               <Package size={32} style={{ margin: '0 auto 1rem', display: 'block', opacity: 0.2 }} />
               <div style={{ fontSize: '0.75rem' }}>No orders found</div>
             </div>
-          ) : (
+          ) : !isMobile ? (
             filteredOrders.map((order, idx) => (
               <React.Fragment key={order.id}>
               <div
@@ -636,8 +663,112 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
               )}
               </React.Fragment>
             ))
-          )}
+          ) : null}
         </div>
+
+        {/* MOBILE ORDER CARDS */}
+        {isMobile && !loading && filteredOrders.length > 0 && (
+          <div>
+            {filteredOrders.map(order => (
+              <div key={order.id} style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', padding: '1.2rem', marginBottom: '1px', width: '100%', boxSizing: 'border-box' }}>
+                {/* Row 1: Order ID + Date */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem', alignItems: 'flex-start' }}>
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '0.7rem', color: '#c9a84c' }}>{order.order_id}</div>
+                  <div style={{ fontSize: '0.65rem', color: '#555' }}>{new Date(order.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                </div>
+                {/* Row 2: Customer name */}
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#f0ece4', marginBottom: '0.6rem' }}>{order.full_name}</div>
+                {/* Row 3: Email + Phone */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.8rem', fontSize: '0.7rem', color: '#555' }}>
+                  <div>{order.email}</div>
+                  <div>{order.phone}</div>
+                </div>
+                {/* Row 4: City + Total */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#555' }}>{order.city}</div>
+                  <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.2rem', color: '#c9a84c', fontWeight: 700 }}>₹{order.total}</div>
+                </div>
+                {/* Row 5: Payment + Status in flex */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', fontSize: '0.7rem' }}>
+                  <div style={{ color: '#555' }}>{order.payment_method}</div>
+                </div>
+                {/* Status Dropdown */}
+                <select
+                  value={order.status}
+                  onChange={e => updateStatus(order.order_id, e.target.value)}
+                  disabled={updatingId === order.order_id}
+                  style={{
+                    width: '100%',
+                    background: '#111',
+                    border: '1px solid #1a1a1a',
+                    color: '#f0ece4',
+                    fontFamily: "'Montserrat', sans-serif",
+                    fontSize: '0.7rem',
+                    padding: '0.7rem',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    marginBottom: '0.8rem',
+                    minHeight: '44px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  {ALL_STATUSES.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                {/* Row 6: Action buttons */}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    style={{
+                      flex: 1,
+                      height: '44px',
+                      background: '#111',
+                      border: '1px solid #1a1a1a',
+                      color: '#888',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      fontFamily: "'Montserrat', sans-serif"
+                    }}
+                  >
+                    <Eye size={14} />
+                    Details
+                  </button>
+                  <button
+                    onClick={() => { setEditingOrder(order); setEditFields({ status: order.status, payment_method: order.payment_method, notes: order.notes || '' }); }}
+                    style={{
+                      flex: 1,
+                      height: '44px',
+                      background: '#111',
+                      border: '1px solid #1a1a1a',
+                      color: '#888',
+                      cursor: 'pointer',
+                      fontSize: '0.7rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      fontFamily: "'Montserrat', sans-serif"
+                    }}
+                  >
+                    <Edit size={14} />
+                    Edit
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ marginTop: '1.5rem', fontSize: '0.6rem', color: '#222', letterSpacing: '0.2em', textAlign: 'center' }}>
@@ -653,10 +784,34 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       {/* Edit Order Modal */}
       {editingOrder && (
         <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 1000,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem'
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.92)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: isMobile ? 'flex-end' : 'center',
+          justifyContent: 'center',
+          padding: isMobile ? '0' : '2rem'
         }}>
-          <div style={{ background: '#111', border: '1px solid #222', width: '90%', maxWidth: '500px', padding: '2rem' }}>
+          <div style={{
+            background: '#111',
+            border: '1px solid #222',
+            width: '100%',
+            maxWidth: isMobile ? '100%' : '500px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '2.5rem',
+            borderRadius: isMobile ? '12px 12px 0 0' : '0'
+          }}>
+            {isMobile && (
+              <div style={{
+                width: '40px',
+                height: '4px',
+                background: '#333',
+                borderRadius: '2px',
+                margin: '0 auto 1.5rem'
+              }} />
+            )}
             <h2 style={{ color: '#c9a84c', fontSize: '1.5rem', marginBottom: '1rem' }}>Edit Order {editingOrder.order_id}</h2>
             <div style={{ color: '#f0ece4', marginBottom: '1rem' }}>{saveMessage && <span style={{ color: '#4ade80' }}>{saveMessage}</span>}</div>
             <div style={{ marginBottom: '1rem' }}>
