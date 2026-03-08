@@ -1,6 +1,6 @@
 
-import React, { useState, createContext, useContext } from 'react';
-import { HashRouter, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
+import React, { useState, createContext, useContext, useEffect } from 'react';
+import { HashRouter, Routes, Route, Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ShoppingCart, User, Menu, X, ArrowRight, CheckCircle, Package, Download, Star, CreditCard, Smartphone, Info, Truck } from 'lucide-react';
 import { PRODUCTS, CATEGORIES, THEME_INFO } from './constants';
 import { useStore } from './store';
@@ -700,9 +700,18 @@ const OrdersPage = () => {
                 <p className="text-2xl font-bold mb-2">₹{order.total}</p>
                 <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{order.status}</span>
               </div>
-              <Link to={`/order-success/${order.id}`} className="w-full md:w-auto text-center bg-gray-50 border-2 border-gray-100 px-6 py-2 rounded font-bold hover:bg-black hover:text-white hover:border-black transition">
-                VIEW RECEIPT
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link to={`/order-success/${order.id}`} className="w-full md:w-auto text-center bg-gray-50 border-2 border-gray-100 px-6 py-2 rounded font-bold hover:bg-black hover:text-white hover:border-black transition">
+                  VIEW RECEIPT
+                </Link>
+                <Link 
+                  to={`/track?orderId=${order.id}`}
+                  className="w-full md:w-auto text-center bg-black text-white border-2 border-black px-6 py-2 rounded font-bold hover:bg-zinc-800 transition flex items-center justify-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  TRACK ORDER
+                </Link>
+              </div>
             </div>
           ))}
         </div>
@@ -896,12 +905,18 @@ const ShippingPage = () => (
 );
 
 const TrackOrderPage = () => {
+  const [searchParams] = useSearchParams();
   const [orderId, setOrderId] = useState('');
   const [email, setEmail] = useState('');
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState('');
+
+  useEffect(() => {
+    const id = searchParams.get('orderId');
+    if (id) setOrderId(id);
+  }, []);
 
   const handleTrack = async () => {
     setLoading(true);
