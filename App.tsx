@@ -2,9 +2,9 @@
 import React, { useState, createContext, useContext } from 'react';
 import { HashRouter, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { ShoppingCart, User, Menu, X, ArrowRight, CheckCircle, Package, Download, Star, CreditCard, Smartphone, Info, Truck } from 'lucide-react';
-import { PRODUCTS, CATEGORIES } from './constants';
+import { PRODUCTS, CATEGORIES, THEME_INFO } from './constants';
 import { useStore } from './store';
-import { CartItem, Product, Address, Order } from './types';
+import { CartItem, Product, Address, Order, ThemeCategory } from './types';
 import { jsPDF } from 'jspdf';
 import AdminDashboard from './AdminDashboard';
 
@@ -21,6 +21,7 @@ const useGlobalStore = () => {
 const Navbar = () => {
   const { cart } = useGlobalStore();
   const cartCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+  const [shopDropdown, setShopDropdown] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm px-6 py-4">
@@ -29,8 +30,27 @@ const Navbar = () => {
           <div className="bg-black text-white px-2 py-0.5 transform -skew-x-12">F6</div>
           <span>SYNDICATE</span>
         </Link>
-        <div className="hidden md:flex gap-8 font-medium">
-          <Link to="/shop" className="hover:text-red-600 transition">SHOP</Link>
+        <div className="hidden md:flex gap-8 font-medium relative">
+          <div 
+            className="relative"
+            onMouseEnter={() => setShopDropdown(true)}
+            onMouseLeave={() => setShopDropdown(false)}
+          >
+            <span className="hover:text-red-600 transition cursor-pointer">SHOP</span>
+            {shopDropdown && (
+              <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 shadow-lg rounded-md py-2 min-w-48 z-50">
+                <Link to="/shop" className="block px-4 py-2 hover:bg-gray-50">ALL PRODUCTS</Link>
+                <Link to="/themes" className="block px-4 py-2 hover:bg-gray-50">BROWSE BY THEME</Link>
+                <div className="border-t border-gray-100 my-1"></div>
+                {CATEGORIES.map(theme => (
+                  <Link key={theme} to={`/theme/${theme}`} className="block px-4 py-2 hover:bg-gray-50 flex items-center gap-2">
+                    <span>{THEME_INFO[theme].emoji}</span>
+                    <span>{theme}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           <Link to="/orders" className="hover:text-red-600 transition">MY ORDERS</Link>
         </div>
         <div className="flex gap-4 items-center">
@@ -154,7 +174,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => (
 );
 
 const ShopPage = () => {
-  const [filter, setFilter] = useState('All');
+  const [filter, setFilter] = useState<ThemeCategory | 'All'>('All');
   const filteredProducts = filter === 'All' ? PRODUCTS : PRODUCTS.filter(p => p.category === filter);
 
   return (
@@ -162,6 +182,12 @@ const ShopPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
         <h1 className="brand-font text-5xl font-bold">COLLECTIONS</h1>
         <div className="flex flex-wrap gap-2">
+          <Link 
+            to="/themes"
+            className="px-4 py-2 text-sm font-bold border bg-red-600 text-white border-red-600 hover:bg-red-700 transition"
+          >
+            ALL THEMES
+          </Link>
           {CATEGORIES.map(cat => (
             <button 
               key={cat}
@@ -685,6 +711,87 @@ const OrdersPage = () => {
   );
 };
 
+const ThemesPage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12">
+      <h1 className="brand-font text-5xl font-bold mb-12">COLLECTIONS</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {CATEGORIES.map(theme => {
+          const info = THEME_INFO[theme];
+          const productCount = PRODUCTS.filter(p => p.category === theme).length;
+          return (
+            <div 
+              key={theme}
+              onClick={() => navigate(`/theme/${theme}`)}
+              className="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition cursor-pointer"
+              style={{ borderLeft: `4px solid ${info.color}` }}
+            >
+              <div className="text-6xl mb-4">{info.emoji}</div>
+              <h2 className="brand-font text-3xl font-bold mb-2">{theme}</h2>
+              <p className="text-gray-600 mb-4">{info.tagline}</p>
+              <p className="text-sm text-gray-500">{productCount} products</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const ThemePage = () => {
+  const { themeName } = useParams<{ themeName: string }>();
+  const navigate = useNavigate();
+
+  if (!themeName || !CATEGORIES.includes(themeName as ThemeCategory)) {
+    return <div>Theme not found</div>;
+  }
+
+  const theme = themeName as ThemeCategory;
+  const info = THEME_INFO[theme];
+  const themeProducts = PRODUCTS.filter(p => p.category === theme);
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <section 
+        className="relative py-24 px-6 text-center"
+        style={{ backgroundColor: `${info.color}10` }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <div className="text-8xl mb-6">{info.emoji}</div>
+          <h1 className="brand-font text-6xl font-bold mb-4">{theme}</h1>
+          <p className="text-xl text-gray-600 mb-2">{info.tagline}</p>
+          <p className="text-lg text-gray-500 max-w-2xl mx-auto">{info.description}</p>
+          <Link 
+            to="/themes"
+            className="inline-block mt-8 px-6 py-3 bg-black text-white font-bold hover:bg-zinc-800 transition"
+          >
+            BACK TO ALL THEMES
+          </Link>
+        </div>
+      </section>
+
+      {/* Products Section */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        {themeProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {themeProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-24">
+            <h2 className="brand-font text-4xl font-bold mb-4">COMING SOON</h2>
+            <p className="text-xl text-gray-600">DROP INCOMING</p>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+};
+
 // --- App Root ---
 
 const App = () => {
@@ -705,6 +812,8 @@ const App = () => {
               <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/themes" element={<ThemesPage />} />
+              <Route path="/theme/:themeName" element={<ThemePage />} />
             </Routes>
           </main>
           <Footer />

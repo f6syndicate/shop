@@ -1,13 +1,17 @@
 
+export type ThemeCategory = 
+  'Memes' | 'Movies & TV' | 'Sports' | 'Anime' | 'Cars & Bikes' | 'Games';
+
 export interface Product {
   id: string;
   name: string;
   price: number;
   description: string;
-  category: string;
+  category: ThemeCategory;
   image: string;
   sizes: string[];
   colors: string[];
+  comingSoon: boolean;
 }
 
 export interface CartItem extends Product {
