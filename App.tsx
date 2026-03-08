@@ -711,6 +711,16 @@ const OrdersPage = () => {
                   <Package className="w-4 h-4" />
                   TRACK ORDER
                 </Link>
+                {(order.status === 'Pending' || order.status === 'Paid') && (
+                  <Link
+                    to={`/track?orderId=${order.id}`}
+                    className="w-full md:w-auto text-center border-2 
+                    border-red-400 text-red-500 px-6 py-2 rounded 
+                    font-bold hover:bg-red-500 hover:text-white transition"
+                  >
+                    CANCEL ORDER
+                  </Link>
+                )}
               </div>
             </div>
           ))}
@@ -912,6 +922,8 @@ const TrackOrderPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   useEffect(() => {
     const id = searchParams.get('orderId');
@@ -952,6 +964,23 @@ const TrackOrderPage = () => {
     } catch (err) {
       alert('Failed to cancel order. Please contact support.');
     }
+  };
+
+  const handleCancelOrder = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel order ${order.order_id}? This cannot be undone.`
+    );
+    if (!confirmed) return;
+    setCancelling(true);
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'Cancelled' })
+      .eq('order_id', order.order_id);
+    if (!error) {
+      setOrder({ ...order, status: 'Cancelled' });
+      setCancelSuccess(true);
+    }
+    setCancelling(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -1051,19 +1080,35 @@ const TrackOrderPage = () => {
             </div>
           </div>
 
-          {(order.status === 'Pending' || order.status === 'Paid') && (
-            <div className="text-center">
+          {(order.status === 'Pending' || 
+            order.status === 'Paid') && !cancelSuccess && (
+            <div className="mt-8 pt-8 border-t border-gray-200">
               <button
-                onClick={handleCancel}
-                className="bg-red-600 text-white px-6 py-2 font-bold hover:bg-red-700 transition"
+                onClick={handleCancelOrder}
+                disabled={cancelling}
+                className="w-full border-2 border-red-500 text-red-500 
+                py-4 font-bold hover:bg-red-500 hover:text-white 
+                transition disabled:opacity-50"
               >
-                CANCEL ORDER
+                {cancelling ? 'CANCELLING...' : 'CANCEL THIS ORDER'}
               </button>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                Only available before order is shipped
+              </p>
             </div>
           )}
 
-          {cancelMessage && (
-            <div className="text-center text-green-600 font-semibold">{cancelMessage}</div>
+          {cancelSuccess && (
+            <div className="mt-8 p-6 bg-red-50 border border-red-200 
+            rounded text-center">
+              <p className="font-bold text-red-700 mb-2">
+                Order Cancelled
+              </p>
+              <p className="text-sm text-red-600">
+                Refund will be processed within 5-7 business days 
+                if payment was made online.
+              </p>
+            </div>
           )}
         </div>
       )}
