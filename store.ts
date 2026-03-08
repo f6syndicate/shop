@@ -70,6 +70,32 @@ export const useStore = () => {
 
     // Insert into Supabase
     try {
+      // STEP 1 — UPSERT CUSTOMER
+      const { data: customerData, error: customerError } = 
+        await supabase
+          .from('customers')
+          .upsert(
+            {
+              contact: address.phone,
+              full_name: address.fullName,
+              email: address.email,
+              street: address.street,
+              city: address.city,
+              state: address.state,
+              zip: address.zip
+            },
+            { onConflict: 'contact' }
+          )
+          .select('customer_id')
+          .single();
+
+      if (customerError) {
+        console.error('Customer upsert failed:', customerError);
+      }
+
+      const customerId = customerData?.customer_id;
+
+      // STEP 2 — INSERT ORDER
       await supabase.from('orders').insert({
         order_id: newOrder.id,
         date: newOrder.date,
@@ -83,8 +109,29 @@ export const useStore = () => {
         items: JSON.stringify(cart),
         total,
         status: 'Paid',
-        payment_method: paymentMethod
+        payment_method: paymentMethod,
+        customer_id: customerId ?? null
       });
+
+      // STEP 3 — INSERT ORDER ITEMS
+      const orderItemsPayload = cart.map(item => ({
+        order_id: newOrder.id,
+        product_id: item.id,
+        name: item.name,
+        category: item.category,
+        size: item.selectedSize,
+        colour: item.selectedColor,
+        price: item.price,
+        quantity: item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItemsPayload);
+
+      if (itemsError) {
+        console.error('Order items insert failed:', itemsError);
+      }
     } catch (error) {
       console.error('Failed to save order to Supabase:', error);
     }
