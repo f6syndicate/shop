@@ -6,6 +6,7 @@ import { PRODUCTS, CATEGORIES, THEME_INFO } from './constants';
 import { useStore } from './store';
 import { CartItem, Product, Address, Order, ThemeCategory } from './types';
 import { jsPDF } from 'jspdf';
+import { supabase } from './supabaseClient';
 import AdminDashboard from './AdminDashboard';
 
 // --- Context ---
@@ -81,17 +82,16 @@ const Footer = () => (
       <div>
         <h4 className="font-bold mb-4">SUPPORT</h4>
         <ul className="text-gray-400 space-y-2">
-          <li>Help Center</li>
-          <li>Returns & Exchanges</li>
-          <li>Shipping Information</li>
-          <li>Track Order</li>
+          <li><Link to="/help" className="hover:text-white transition">Help Center</Link></li>
+          <li><Link to="/returns" className="hover:text-white transition">Returns & Exchanges</Link></li>
+          <li><Link to="/shipping" className="hover:text-white transition">Shipping Information</Link></li>
+          <li><Link to="/track" className="hover:text-white transition">Track Order</Link></li>
         </ul>
       </div>
       <div>
         <h4 className="font-bold mb-4">COMPANY</h4>
         <ul className="text-gray-400 space-y-2">
           <li>About Us</li>
-          <li>Careers</li>
           <li>Privacy Policy</li>
           <li>Terms of Service</li>
         </ul>
@@ -792,6 +792,270 @@ const ThemePage = () => {
   );
 };
 
+const HelpPage = () => {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqs = [
+    { q: "What sizes do you offer?", a: "We offer S, M, L, XL, XXL in all products." },
+    { q: "How long does delivery take?", a: "5-7 business days pan India." },
+    { q: "Do you ship internationally?", a: "Not yet, India only currently." },
+    { q: "How do I track my order?", a: "Use the Track Order page with your Order ID." },
+    { q: "What is your return policy?", a: "7 days return for unused items." },
+    { q: "Can I cancel my order?", a: "Yes within 24 hours via Track Order page." },
+    { q: "What payment methods do you accept?", a: "UPI, Card, Cash on Delivery." },
+    { q: "How do I contact support?", a: "Email support@f6syndicate.com." }
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12">
+      <h1 className="brand-font text-5xl font-bold mb-12">HELP CENTER</h1>
+      <div className="space-y-4">
+        {faqs.map((faq, i) => (
+          <div key={i} className="border border-gray-200 rounded-lg">
+            <button
+              onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              className="w-full text-left p-6 font-semibold hover:bg-gray-50 transition"
+            >
+              {faq.q}
+            </button>
+            {openFaq === i && (
+              <div className="px-6 pb-6 text-gray-600">
+                {faq.a}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ReturnsPage = () => (
+  <div className="max-w-7xl mx-auto px-6 py-12">
+    <h1 className="brand-font text-5xl font-bold mb-12">RETURNS & EXCHANGES</h1>
+    <div className="space-y-12">
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">RETURN POLICY</h2>
+        <p className="text-gray-600">7 days from delivery for unused items with original tags attached.</p>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">EXCHANGE POLICY</h2>
+        <p className="text-gray-600">Size exchanges within 7 days of delivery.</p>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">REFUND TIMELINE</h2>
+        <p className="text-gray-600">5-7 business days after item is received and inspected.</p>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">HOW TO RETURN</h2>
+        <ol className="text-gray-600 list-decimal list-inside space-y-2">
+          <li>Email us at support@f6syndicate.com with your order ID</li>
+          <li>Pack the item securely with original packaging</li>
+          <li>Ship to our return address (provided in email)</li>
+          <li>Refund will be processed once item is received</li>
+        </ol>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">NON-RETURNABLE ITEMS</h2>
+        <p className="text-gray-600">Sale items and customized orders are not eligible for return.</p>
+      </div>
+    </div>
+  </div>
+);
+
+const ShippingPage = () => (
+  <div className="max-w-7xl mx-auto px-6 py-12">
+    <h1 className="brand-font text-5xl font-bold mb-12">SHIPPING INFORMATION</h1>
+    <div className="space-y-12">
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">FREE SHIPPING</h2>
+        <p className="text-gray-600">Free shipping on all orders across India.</p>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">DELIVERY TIMELINE</h2>
+        <div className="space-y-2 text-gray-600">
+          <p><strong>Metro cities:</strong> 3-5 business days</p>
+          <p><strong>Tier 2 cities:</strong> 5-7 business days</p>
+          <p><strong>Remote areas:</strong> 7-10 business days</p>
+        </div>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">ORDER PROCESSING</h2>
+        <p className="text-gray-600">Orders are processed within 24 hours of placement.</p>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">TRACKING</h2>
+        <p className="text-gray-600">Tracking link sent via email after dispatch.</p>
+      </div>
+      <div>
+        <h2 className="brand-font text-3xl font-bold mb-4">SHIPPING PARTNER</h2>
+        <p className="text-gray-600">Delhivery / Shiprocket</p>
+      </div>
+    </div>
+  </div>
+);
+
+const TrackOrderPage = () => {
+  const [orderId, setOrderId] = useState('');
+  const [email, setEmail] = useState('');
+  const [order, setOrder] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState('');
+
+  const handleTrack = async () => {
+    setLoading(true);
+    setError('');
+    setOrder(null);
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('order_id, status, date, full_name, items, total, payment_method, city')
+        .eq('order_id', orderId.toUpperCase())
+        .eq('email', email.toLowerCase())
+        .single();
+      if (error || !data) {
+        setError('Order not found. Please check your Order ID and email.');
+      } else {
+        setOrder(data);
+      }
+    } catch (err) {
+      setError('Order not found. Please check your Order ID and email.');
+    }
+    setLoading(false);
+  };
+
+  const handleCancel = async () => {
+    if (!confirm(`Are you sure you want to cancel order ${order.order_id}? This cannot be undone.`)) return;
+    try {
+      await supabase
+        .from('orders')
+        .update({ status: 'Cancelled' })
+        .eq('order_id', order.order_id);
+      setOrder({ ...order, status: 'Cancelled' });
+      setCancelMessage('Your order has been cancelled. Refund will be processed within 5-7 business days if payment was made.');
+    } catch (err) {
+      alert('Failed to cancel order. Please contact support.');
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      Pending: '#f59e0b',
+      Paid: '#3b82f6',
+      Shipped: '#8b5cf6',
+      Delivered: '#10b981',
+      Cancelled: '#ef4444'
+    };
+    return colors[status] || '#666';
+  };
+
+  const steps = ['Order Placed', 'Paid', 'Shipped', 'Delivered'];
+  const currentStep = steps.findIndex(s => s.toLowerCase() === order?.status.toLowerCase()) + 1;
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-12">
+      <h1 className="brand-font text-5xl font-bold mb-12">TRACK ORDER</h1>
+      
+      <div className="max-w-md mx-auto mb-12">
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Order ID (e.g. F6-ABC123)"
+            value={orderId}
+            onChange={e => setOrderId(e.target.value)}
+            className="w-full p-3 border border-gray-300 focus:outline-none focus:border-black"
+          />
+          <input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full p-3 border border-gray-300 focus:outline-none focus:border-black"
+          />
+          <button
+            onClick={handleTrack}
+            disabled={loading}
+            className="w-full bg-black text-white py-3 font-bold hover:bg-gray-800 transition"
+          >
+            {loading ? 'SEARCHING...' : 'TRACK ORDER'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mt-4">
+          Your Order ID starts with F6- and can be found in your order confirmation screen.
+        </p>
+      </div>
+
+      {error && (
+        <div className="text-center text-red-600 mb-8">{error}</div>
+      )}
+
+      {order && (
+        <div className="max-w-2xl mx-auto space-y-8">
+          <div className="text-center">
+            <div className="font-mono text-2xl font-bold text-yellow-600 mb-2">{order.order_id}</div>
+            <div 
+              className="inline-block px-4 py-2 text-sm font-bold uppercase tracking-wide"
+              style={{ background: `${getStatusColor(order.status)}20`, color: getStatusColor(order.status), border: `1px solid ${getStatusColor(order.status)}40` }}
+            >
+              {order.status}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            {steps.map((step, i) => (
+              <div key={step} className="flex flex-col items-center">
+                <div 
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${i < currentStep ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}
+                >
+                  {i + 1}
+                </div>
+                <div className={`text-xs mt-2 ${i < currentStep ? 'text-green-600 font-semibold' : 'text-gray-500'}`}>
+                  {step}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="font-bold mb-2">Order Details</h3>
+              <p><strong>Date:</strong> {new Date(order.date).toLocaleDateString()}</p>
+              <p><strong>Customer:</strong> {order.full_name}</p>
+              <p><strong>Payment:</strong> {order.payment_method}</p>
+              <p><strong>Delivery City:</strong> {order.city}</p>
+            </div>
+            <div>
+              <h3 className="font-bold mb-2">Items</h3>
+              {order.items && order.items.map((item: any, i: number) => (
+                <div key={i} className="text-sm mb-1">
+                  {item.name} ({item.selectedSize}) × {item.quantity}
+                </div>
+              ))}
+              <div className="font-bold mt-2">Total: ₹{order.total}</div>
+            </div>
+          </div>
+
+          {(order.status === 'Pending' || order.status === 'Paid') && (
+            <div className="text-center">
+              <button
+                onClick={handleCancel}
+                className="bg-red-600 text-white px-6 py-2 font-bold hover:bg-red-700 transition"
+              >
+                CANCEL ORDER
+              </button>
+            </div>
+          )}
+
+          {cancelMessage && (
+            <div className="text-center text-green-600 font-semibold">{cancelMessage}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // --- App Root ---
 
 const App = () => {
@@ -816,6 +1080,10 @@ const App = () => {
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/themes" element={<ThemesPage />} />
                   <Route path="/theme/:themeName" element={<ThemePage />} />
+                  <Route path="/help" element={<HelpPage />} />
+                  <Route path="/returns" element={<ReturnsPage />} />
+                  <Route path="/shipping" element={<ShippingPage />} />
+                  <Route path="/track" element={<TrackOrderPage />} />
                 </Routes>
               </main>
               <Footer />

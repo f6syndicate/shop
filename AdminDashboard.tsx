@@ -583,7 +583,23 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 <div style={{ fontSize: '0.65rem', color: '#555' }}>{order.payment_method}</div>
 
                 {/* Status Dropdown */}
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div 
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.2rem 0.6rem',
+                      fontSize: '0.55rem',
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                      borderRadius: '2px',
+                      background: STATUS_COLORS[order.status].split(' ')[0],
+                      color: STATUS_COLORS[order.status].split(' ')[1],
+                      border: `1px solid ${STATUS_COLORS[order.status].split(' ')[2]}`
+                    }}
+                  >
+                    {order.status}
+                  </div>
                   <select
                     value={order.status}
                     onChange={e => updateStatus(order.order_id, e.target.value)}
@@ -691,6 +707,25 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 {/* Row 5: Payment + Status in flex */}
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.8rem', fontSize: '0.7rem' }}>
                   <div style={{ color: '#555' }}>{order.payment_method}</div>
+                </div>
+                {/* Status */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.8rem' }}>
+                  <div 
+                    style={{
+                      display: 'inline-block',
+                      padding: '0.2rem 0.6rem',
+                      fontSize: '0.55rem',
+                      letterSpacing: '0.15em',
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                      borderRadius: '2px',
+                      background: STATUS_COLORS[order.status].split(' ')[0],
+                      color: STATUS_COLORS[order.status].split(' ')[1],
+                      border: `1px solid ${STATUS_COLORS[order.status].split(' ')[2]}`
+                    }}
+                  >
+                    {order.status}
+                  </div>
                 </div>
                 {/* Status Dropdown */}
                 <select
